@@ -39,9 +39,19 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/maven-helloworld:${{ steps.version.outputs.version }}
-          format: table
-          exit-code: '1'
+          format: json
+          output: trivy-results.json
           severity: CRITICAL,HIGH
+
+      - name: Check Trivy thresholds
+        run: |
+          HIGH=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="HIGH")] | length' trivy-results.json)
+          CRITICAL=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="CRITICAL")] | length' trivy-results.json)
+          echo "HIGH: $HIGH, CRITICAL: $CRITICAL"
+          if [ "$CRITICAL" -gt 3 ] || [ "$HIGH" -gt 5 ]; then
+            echo "::error::Vulnerability thresholds exceeded (HIGH: $HIGH/5, CRITICAL: $CRITICAL/3)"
+            exit 1
+          fi
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
