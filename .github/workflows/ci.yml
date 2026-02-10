@@ -1,0 +1,48 @@
+---
+name: CI
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bump patch version
+        id: version
+        run: |
+          CURRENT=$(grep -oP '<version>\K[0-9]+\.[0-9]+\.[0-9]+' myapp/pom.xml | head -1)
+          MAJOR=$(echo "$CURRENT" | cut -d. -f1)
+          MINOR=$(echo "$CURRENT" | cut -d. -f2)
+          PATCH=$(echo "$CURRENT" | cut -d. -f3)
+          NEW_PATCH=$((PATCH + 1))
+          NEW_VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}"
+          sed -i "s|<version>${CURRENT}</version>|<version>${NEW_VERSION}</version>|" myapp/pom.xml
+          echo "version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/maven-helloworld:${{ steps.version.outputs.version }} .
+          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/maven-helloworld:${{ steps.version.outputs.version }}
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Push Docker image
+        run: |
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/maven-helloworld:${{ steps.version.outputs.version }}
+
+      - name: Commit version bump
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add myapp/pom.xml
+          git commit -m "bump version to ${{ steps.version.outputs.version }} [skip ci]"
+          git push
