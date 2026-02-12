@@ -29,6 +29,7 @@ jobs:
           NEW_PATCH=$((PATCH + 1))
           NEW_VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}"
           sed -i "s|<version>${CURRENT}</version>|<version>${NEW_VERSION}</version>|" myapp/pom.xml
+          sed -i "s|tag: \".*\"|tag: \"${NEW_VERSION}\"|" helm/values.yaml
           echo "version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
@@ -76,6 +77,6 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add myapp/pom.xml
+          git add myapp/pom.xml helm/values.yaml
           git commit -m "bump version to ${{ steps.version.outputs.version }} [skip ci]"
           git push

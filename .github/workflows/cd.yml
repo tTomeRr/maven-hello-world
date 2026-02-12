@@ -1,0 +1,31 @@
+---
+name: CD
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Helm template
+        run: helm template maven-hello-world ./helm
+
+      - name: Install kubeconform
+        run: |
+          curl -sL https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz | tar xz
+          sudo mv kubeconform /usr/local/bin/
+
+      - name: Validate manifests
+        run: helm template maven-hello-world ./helm | kubeconform -strict -summary
+
+      - name: Deploy
+        run: |
+          echo "Connecting to cluster..."
+          echo "helm upgrade --install maven-hello-world ./helm -n myapp"
