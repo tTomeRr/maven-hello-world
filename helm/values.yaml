@@ -1,0 +1,43 @@
+---
+deployment:
+  enabled: true
+  image:
+    repository: "ttomerr/maven-helloworld"
+    tag: "1.0.3"
+  openshiftOAuthProxy:
+    enabled: false
+  startupProbe:
+    enabled: false
+  livenessProbe:
+    enabled: false
+  readinessProbe:
+    enabled: false
+  ports:
+    - containerPort: 8080
+      name: http
+      protocol: TCP
+
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    - port: 8080
+      name: http
+      protocol: TCP
+      targetPort: 8080
+
+persistence:
+  enabled: false
+
+rbac:
+  serviceAccount:
+    enabled: false
+
+autoscaling:
+  enabled: false
+
+vpa:
+  enabled: false
+
+pdb:
+  enabled: false
