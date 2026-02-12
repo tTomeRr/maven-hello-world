@@ -14,8 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # We send to /dev/null because we do not want to print the entire manifests (for example secrets)
       - name: Helm template
-        run: helm template maven-hello-world ./helm
+        run: helm template maven-hello-world ./helm > /dev/null
 
       - name: Install kubeconform
         run: |
