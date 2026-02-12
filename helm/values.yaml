@@ -3,7 +3,7 @@ deployment:
   enabled: true
   image:
     repository: "ttomerr/maven-helloworld"
-    tag: "1.0.4"
+    tag: "1.0.5"
   openshiftOAuthProxy:
     enabled: false
   startupProbe:
